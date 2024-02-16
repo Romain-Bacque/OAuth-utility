@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 // Lift the CORS restriction
 app.use(
   cors({
-    origin: process.env.ORIGIN,
+    origin: "*", // use process.env.ORIGIN in prod env
     credentials: true,
   })
 );

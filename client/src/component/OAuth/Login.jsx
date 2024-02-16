@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import axios from "axios";
 import GoogleButton from "react-google-button";
 import { useNavigate } from "react-router-dom";
@@ -7,20 +6,14 @@ const appHost = import.meta.env.VITE_HOST;
 let newWindow = null;
 
 const Login = () => {
-  const [url, setUrl] = useState(null);
   const navigate = useNavigate();
 
-  const getUrl = () => {
-    axios
-      .get("http://localhost:4000/auth/getUrl")
-      .then((response) => {
-        const { url } = response.data;
+  const getUrl = async () => {
+    const {
+      data: { url },
+    } = await axios.get("http://localhost:4000/auth/getUrl");
 
-        setUrl(url);
-      })
-      .catch((error) => {
-        console.error("Erreur lors de l'enregistrement du client :", error);
-      });
+    return url;
   };
 
   const receiveMessage = (event) => {
@@ -31,6 +24,7 @@ const Login = () => {
     }
 
     const { data } = event;
+
     // if we trust the sender and the source is our popup
     // get the URL params
     const urlParams = new URLSearchParams(data);
@@ -49,11 +43,20 @@ const Login = () => {
       });
   };
 
-  const redirectToUrl = (event) => {
+  const redirectToUrl = async (event) => {
     event.preventDefault();
+
+    let url = null;
 
     // remove any existing event listeners
     window.removeEventListener("message", receiveMessage);
+
+    try {
+      url = await getUrl();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
 
     if (newWindow === null || newWindow.closed) {
       const popupWinWidth =
@@ -73,13 +76,10 @@ const Login = () => {
     } else {
       newWindow.focus();
     }
+
     // add the listener for receiving a message from the popup
     window.addEventListener("message", (event) => receiveMessage(event), false);
   };
-
-  useEffect(() => {
-    getUrl();
-  }, []);
 
   return <GoogleButton style={{ margin: "auto" }} onClick={redirectToUrl} />;
 };
